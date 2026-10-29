@@ -1,6 +1,6 @@
 import sys
 import shutil
-
+import subprocess
 
 EXIT = False
 
@@ -12,8 +12,10 @@ def _exit(*args):
     EXIT = True
 
 
-def _echo(text):
-    sys.stdout.write(f"{text}\n")
+def _echo(*agrs):
+    output = " ".join(agrs)
+    sys.stdout.write(f"{output}\n")
+
 
 
 def _type(*cmds):
@@ -21,7 +23,7 @@ def _type(*cmds):
         if cmd in COMMANDS:
             sys.stdout.write(f"{cmd} is a shell builtin\n")
         elif path:=find(cmd):
-            sys.stdout.write(f"{path}\n")
+            sys.stdout.write(f"{cmd} is {path}\n")
         else:
             sys.stderr.write(f"{cmd}: not found\n")
 
@@ -38,7 +40,12 @@ COMMANDS = {
     "type": _type
 }
 
-
+def subprocess_call(cmd, path, *args):
+    result = subprocess.run([cmd, *args], executable=path, capture_output=True,text=True)
+    if result.returncode == 0:
+         sys.stdout.write(result.stdout)
+    else:
+        sys.stderr.write(f"{cmd}: command not found\n")
 
 
 def main():
@@ -58,15 +65,11 @@ def main():
 
         if command in COMMANDS:
             COMMANDS[command](*args)
-
+        elif cmd_full_path:=find(command):
+            subprocess_call(command,cmd_full_path, *args)
         else:
             sys.stderr.write(f"{user_input}: command not found\n")
 
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
